@@ -1,0 +1,34 @@
+# カスタムネットワークに名前をつけられるのは ver 3.5 から
+# (https://docs.docker.com/compose/networking/#specify-custom-networks)
+version: '3.5'
+
+# 基本設定はこちら
+# (https://hub.docker.com/r/jwilder/nginx-proxy/)
+services:
+  proxy:
+    image: jwilder/nginx-proxy:alpine
+    container_name: ef_nginx
+
+    # ホストとコンテナのポートをマッピング
+    # ** expose ではホストからコンテナのポートが見えないが、ports では見える
+    # (https://docs.docker.com/compose/compose-file/#expose)
+    ports:
+      - "443:443"
+      - "80:80"
+
+    networks:
+      - expwy_footprints
+
+    # proxy コンテナが、Docker デーモンからイベントを受信し、処理を走らせられるように
+    # ** セキュリティを考え、読み取り専用モード (ro) でマウント
+    # (https://suin.io/531#--volume-varrundockersocktmpdockersockro)
+    volumes:
+      - ./certs:/etc/nginx/certs
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+# upstream にあるコンテナとネットワークを共有
+# (https://github.com/jwilder/nginx-proxy/issues/644)
+# (https://docs.docker.com/compose/networking/#use-a-pre-existing-network)
+networks:
+  expwy_footprints:
+    external: true
